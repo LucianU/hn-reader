@@ -1,0 +1,95 @@
+cabal-version:       2.4
+name:                hn-reader
+version:             0.0.0.0
+synopsis:            It allows you to read Hacker News without a browser.
+description:         It allows you to read Hacker News without a browser.
+homepage:            https://github.com/elbear/hn-reader
+bug-reports:         https://github.com/elbear/hn-reader/issues
+license:             MIT
+license-file:        LICENSE
+author:              Lucian Ursu
+maintainer:          Lucian Ursu <lucian.ursu@gmail.com>
+copyright:           2021 Lucian Ursu
+category:            Utility
+build-type:          Simple
+extra-doc-files:     README.md
+                     CHANGELOG.md
+tested-with:         GHC == 8.8.3
+
+source-repository head
+  type:                git
+  location:            https://github.com/elbear/hn-reader.git
+
+common common-options
+  build-depends:       base ^>= 4.13.0.0
+                     , protolude
+  
+  mixins:              base hiding (Prelude)
+                     , protolude (Protolude as Prelude)
+  
+  ghc-options:         -Wall
+                       -Wcompat
+                       -Widentities
+                       -Wincomplete-uni-patterns
+                       -Wincomplete-record-updates
+  if impl(ghc >= 8.0)
+    ghc-options:       -Wredundant-constraints
+  if impl(ghc >= 8.2)
+    ghc-options:       -fhide-source-paths
+  if impl(ghc >= 8.4)
+    ghc-options:       -Wmissing-export-lists
+                       -Wpartial-fields
+  if impl(ghc >= 8.8)
+    ghc-options:       -Wmissing-deriving-strategies
+
+  default-language:    Haskell2010
+  default-extensions:  ConstraintKinds
+                       DeriveGeneric
+                       GeneralizedNewtypeDeriving
+                       InstanceSigs
+                       KindSignatures
+                       LambdaCase
+                       OverloadedStrings
+                       PackageImports
+                       RecordWildCards
+                       ScopedTypeVariables
+                       StandaloneDeriving
+                       StrictData
+                       TupleSections
+                       TypeApplications
+                       ViewPatterns
+
+library
+  import:              common-options
+  hs-source-dirs:      src
+  exposed-modules:     HnReader
+
+executable hn-reader
+  import:              common-options
+  hs-source-dirs:      app
+  main-is:             Main.hs
+  build-depends:       hn-reader
+  ghc-options:         -threaded
+                       -rtsopts
+                       -with-rtsopts=-N
+
+test-suite hn-reader-test
+  import:              common-options
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Spec.hs
+  build-depends:       hn-reader
+  ghc-options:         -threaded
+                       -rtsopts
+                       -with-rtsopts=-N
+
+benchmark hn-reader-benchmark
+  import:              common-options
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      benchmark
+  main-is:             Main.hs
+  build-depends:       gauge
+                     , hn-reader
+  ghc-options:         -threaded
+                       -rtsopts
+                       -with-rtsopts=-N
