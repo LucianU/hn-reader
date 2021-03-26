@@ -1,6 +1,6 @@
 cabal-version:       2.4
 name:                hn-reader
-version:             0.0.0.0
+version:             0.0.0.1
 synopsis:            It allows you to read Hacker News without a browser.
 description:         It allows you to read Hacker News without a browser.
 homepage:            https://github.com/elbear/hn-reader
@@ -23,10 +23,15 @@ source-repository head
 common common-options
   build-depends:       base ^>= 4.13.0.0
                      , protolude
-  
+                     , aeson
+                     , lens == 5.0.*
+                     , pretty-display == 0.1.*
+                     , unix-time == 0.4.*
+                     , wreq == 0.5.*
+
   mixins:              base hiding (Prelude)
                      , protolude (Protolude as Prelude)
-  
+
   ghc-options:         -Wall
                        -Wcompat
                        -Widentities
@@ -63,6 +68,7 @@ library
   import:              common-options
   hs-source-dirs:      src
   exposed-modules:     HnReader
+  other-modules:       JsonUtils
 
 executable hn-reader
   import:              common-options
