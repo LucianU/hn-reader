@@ -1,7 +1,8 @@
 module Main (main) where
 
-import HnReader (someFunc)
-
+import HnReader (getTopStories)
 
 main :: IO ()
-main = someFunc
+main = do
+  stories <- getTopStories
+  mapM_ putStrLn stories

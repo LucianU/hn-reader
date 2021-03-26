@@ -5,8 +5,7 @@
 --
 -- It allows you to read Hacker News without a browser.
 module HnReader
-  ( someFunc
-  , getTopStories
+  ( getTopStories
   )
 where
 
@@ -16,11 +15,6 @@ import GHC.Generics ()
 import qualified Network.Wreq as Wreq
 import Text.Display (Display (..), mkDtStr, dShow)
 import JsonUtils (encodingOptions)
-
-someFunc :: IO ()
-someFunc = do
-  stories <- getTopStories
-  mapM_ putStrLn stories
 
 getTopStories :: IO [Text]
 getTopStories = do
