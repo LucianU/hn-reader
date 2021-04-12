@@ -23,8 +23,9 @@ source-repository head
 common common-options
   build-depends:       base ^>= 4.13.0.0
                      , protolude
-                     , aeson
+                     , aeson == 1.5.*
                      , lens == 5.0.*
+                     , optparse-applicative == 0.16.*
                      , pretty-display == 0.1.*
                      , unix-time == 0.4.*
                      , wreq == 0.5.*

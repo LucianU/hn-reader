@@ -5,27 +5,44 @@
 --
 -- It allows you to read Hacker News without a browser.
 module HnReader
-  ( getTopStories
+  ( getTopStories,
+    getNewStories,
   )
 where
 
 import Control.Lens ((^.))
-import Data.Aeson (FromJSON(..), ToJSON(..), genericToEncoding, genericParseJSON)
+import Data.Aeson (FromJSON (..), ToJSON (..), genericParseJSON, genericToEncoding)
 import GHC.Generics ()
-import qualified Network.Wreq as Wreq
-import Text.Display (Display (..), mkDtStr, dShow)
 import JsonUtils (encodingOptions)
+import qualified Network.Wreq as Wreq
+import Text.Display (Display (..), dShow, mkDtStr)
 
-getTopStories :: IO [Text]
-getTopStories = do
-  r <- Wreq.asJSON =<< Wreq.get topStoriesURL
-  let storyIds = r ^. Wreq.responseBody
-  stories <- mapM getStory (take 30 storyIds)
+getTopStories :: Int -> Int -> IO [Text]
+getTopStories storiesPerPage pageIndex = do
+  stories <- getItems topStoriesURL storiesPerPage pageIndex
   pure $ map (dShow . display) stories
 
 -- getTopStories :: IO [Story]
 
--- getNewStories :: IO [Story]
+getNewStories :: Int -> Int -> IO [Text]
+getNewStories storiesPerPage pageIndex = do
+  stories <- getItems newStoriesURL storiesPerPage pageIndex
+  pure $ map (dShow . display) stories
+
+getItems :: [Char] -> Int -> Int -> IO [Item]
+getItems itemsURL itemsPerPage pageIndex = do
+  jsonResponse <- Wreq.get itemsURL
+  response <- Wreq.asJSON jsonResponse -- this function should really be named `decodeJSON`
+  let itemsIds = response ^. Wreq.responseBody
+      itemsIdsToDisplay = pageItems itemsPerPage pageIndex itemsIds
+  mapM getItem itemsIdsToDisplay
+
+pageItems :: Int -> Int -> [a] -> [a]
+pageItems itemsPerPage pageIndex items =
+  take (pageIndex * itemsPerPage) $ drop ((pageIndex - 1) * itemsPerPage) items
+
+-- getStory :: Int -> IO Story
+-- getStory id_ = undefined
 
 -- getJobs :: IO [Job]
 
@@ -33,17 +50,22 @@ getTopStories = do
 
 -- getPollOpts :: IO [PollOpt]
 
--- getComments :: IO [Comment]
+-- getComments :: Int -> IO [Comment]
+-- getComments storyId = undefined
+
+-- getCommentThread :: Int -> IO [Comment]
+-- getCommendThread threadParentId = undefined
 
 -- getUser :: Text -> IO User
 -- getUser username = undefined
 
-getStory :: Int -> IO Item
-getStory id_ = do
-  r <- Wreq.get $ itemURL id_
-  decodedResp <- Wreq.asJSON r
-  pure $ decodedResp ^. Wreq.responseBody
+getItem :: Int -> IO Item
+getItem id_ = do
+  jsonResponse <- Wreq.get $ itemURL id_
+  response <- Wreq.asJSON jsonResponse
+  pure $ response ^. Wreq.responseBody
 
+-- ITEMS
 data Item = Item
   { iId :: Int,
     iDeleted :: Maybe Bool,
@@ -88,12 +110,13 @@ instance ToJSON ItemType where
 instance FromJSON ItemType where
   parseJSON = genericParseJSON encodingOptions
 
+-- USERS
 data User = User
-  { uId :: Text
-  , uKarma :: Int
-  , uCreated :: Int
-  , uAbout :: Maybe Text
-  , uSubmitted :: [Int]
+  { uId :: Text,
+    uKarma :: Int,
+    uCreated :: Int,
+    uAbout :: Maybe Text,
+    uSubmitted :: [Int]
   }
   deriving (Show, Generic)
 
@@ -109,6 +132,9 @@ apiBaseURL = "https://hacker-news.firebaseio.com/v0/"
 
 topStoriesURL :: [Char]
 topStoriesURL = apiBaseURL <> "topstories.json"
+
+newStoriesURL :: [Char]
+newStoriesURL = apiBaseURL <> "newstories.json"
 
 itemURL :: Int -> [Char]
 itemURL id_ =
