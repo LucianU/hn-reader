@@ -77,7 +77,7 @@ data Item = Item
     iParent :: Maybe Int,
     iPoll :: Maybe Int,
     iKids :: Maybe [Int],
-    iURL :: Maybe Text,
+    iUrl :: Maybe Text,
     iScore :: Maybe Int,
     iTitle :: Maybe Text,
     iParts :: Maybe [Int],
