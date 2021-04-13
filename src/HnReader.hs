@@ -12,22 +12,25 @@ where
 
 import Control.Lens ((^.))
 import Data.Aeson (FromJSON (..), ToJSON (..), genericParseJSON, genericToEncoding)
+import qualified Data.Text as T
 import GHC.Generics ()
 import JsonUtils (encodingOptions)
 import qualified Network.Wreq as Wreq
-import Text.Display (Display (..), dShow, mkDtStr)
+import Text.Display (Display (..), dShow, mkDt)
+import Network.URI (parseURI, URI (uriAuthority), URIAuth (uriRegName))
 
 getTopStories :: Int -> Int -> IO [Text]
 getTopStories storiesPerPage pageIndex = do
-  stories <- getItems topStoriesURL storiesPerPage pageIndex
-  pure $ map (dShow . display) stories
-
--- getTopStories :: IO [Story]
+  items <- getItems topStoriesURL storiesPerPage pageIndex
+  pure $ map render items
 
 getNewStories :: Int -> Int -> IO [Text]
 getNewStories storiesPerPage pageIndex = do
-  stories <- getItems newStoriesURL storiesPerPage pageIndex
-  pure $ map (dShow . display) stories
+  items <- getItems newStoriesURL storiesPerPage pageIndex
+  pure $ map render items
+
+render :: Display a => a -> Text
+render = dShow . display
 
 getItems :: [Char] -> Int -> Int -> IO [Item]
 getItems itemsURL itemsPerPage pageIndex = do
@@ -93,8 +96,39 @@ instance FromJSON Item where
 
 instance Display Item where
   display item =
-    mkDtStr $
-      show (iScore item) <> " " <> show (iTitle item)
+    let
+      rawScore = fromMaybe 0 $ iScore item
+      score =
+        if rawScore == 0
+          then
+            "N/A"
+          else
+            show rawScore
+      title = fromMaybe "N/A" $ iTitle item
+      urlHost = getHost item
+      commentCount = show $ fromMaybe 0 $ iDescendants item
+      id_ = show $ iId item
+      separator = T.pack $ replicate (T.length $ score <> title) '-'
+    in
+      mkDt $
+        separator <> "\n" <>
+        score <> " | " <> title <> " (" <> urlHost <> ")" <> "\n" <>
+        commentCount <> " comments | " <> "ID: " <> id_
+
+getHost :: Item -> Text
+getHost item =
+  let
+    maybeHost = do
+      rawURI <- iUrl item
+      uri <- parseURI $ T.unpack rawURI
+      authority <- uriAuthority uri
+      pure $ uriRegName authority
+    host = T.pack $ fromMaybe "N/A" maybeHost
+  in
+    if T.isPrefixOf "www." host
+    then
+      T.drop 4 host
+    else host
 
 data ItemType
   = Job
