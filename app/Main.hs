@@ -1,7 +1,7 @@
 module Main (main) where
 
-import HnReader (getNewStories, getTopStories)
-import Options.Applicative (Parser, auto, command, execParser, help, idm, info, long, metavar, option, progDesc, short, showDefault, subparser, value)
+import HnReader (getComments, getNewStories, getTopStories)
+import Options.Applicative (Parser, auto, command, execParser, help, idm, info, long, metavar, option, progDesc, short, showDefault, subparser, value, argument)
 import Prelude hiding (option)
 
 {- Interface
@@ -30,6 +30,7 @@ opts =
   subparser
     ( command "top" (info (printStories getTopStories <$> storiesPerPageOpt <*> pageOpt) (progDesc "Show top stories"))
         <> command "new" (info (printStories getNewStories <$> storiesPerPageOpt <*> pageOpt) (progDesc "Show new stories"))
+        <> command "comments" (info (printComments <$> storiesPerPageOpt <*> pageOpt <*> storyIdArg) (progDesc "Show the comments on a story"))
     )
   where
     storiesPerPageOpt :: Parser Int
@@ -54,8 +55,18 @@ opts =
             <> metavar "INT"
             <> help "The page we want to display"
         )
+    storyIdArg :: Parser Int
+    storyIdArg =
+      argument
+        auto
+        (metavar "STORY-ID")
 
 printStories :: (Int -> Int -> IO [Text]) -> Int -> Int -> IO ()
 printStories getStories storiesPerPage pageIndex = do
   stories <- getStories storiesPerPage pageIndex
   putStrLn $ unlines stories
+
+printComments :: Int -> Int -> Int -> IO ()
+printComments itemsPerPage pageIndex storyId = do
+  comments <- getComments storyId itemsPerPage pageIndex
+  putStrLn $ unlines comments
